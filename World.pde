@@ -1,9 +1,5 @@
-class World {
-  int[][] map;
-  
-  World(int[][] map) {
-    this.map = map;
-  }
+interface GameEvent {
+  void draw();
 }
 
 void drawBackground() {
@@ -18,29 +14,19 @@ void drawBackground() {
   }
 }
 
-class Wall implements Drawable {
-  float x;
-  float y;
-  float width;
-  float height;
+class Wall implements Drawable2D {
+  PVector dimensions;
+  PVector position;
   EntityTexture texture;
  
   Wall(float x, float y, float width, float height, EntityTexture texture) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
+    this.dimensions = new PVector(width, height);
+    this.position = new PVector(x, y);
     this.texture = texture;
   }
- 
-  float getX() { return x; }
-  float getY() { return y; }
-  
+
+  void step() {}
   void draw() {
-    texture.draw(x,y,width,height);
-  }
-  
-  void step() {
-    
+    texture.draw(position.x,position.y,dimensions.x,dimensions.y);
   }
 }
