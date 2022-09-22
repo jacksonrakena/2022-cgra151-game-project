@@ -20,6 +20,10 @@ class PlayerEntity extends TriangleEntity implements CircleCollider2D {
     this.control = control;
   }
   
+  PVector calculateForwardVector() {
+    return new PVector((float)(-1 * Math.sin(radians(angle+180))), (float)(Math.cos(radians(angle+180))));
+  }
+  
   void step() {
     super.step();
     float localAcceleration = DEBUG_disableAccelerationRampAndMomentum ? 1 : Globals.playerAccelerationSpeed;

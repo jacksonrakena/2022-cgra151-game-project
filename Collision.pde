@@ -1,4 +1,4 @@
-interface CircleCollider2D extends GameObject2D {
+interface CircleCollider2D extends PhysicsObject {
   float getRadius();
   void addVelocity(PVector difference);
   boolean isMovable();

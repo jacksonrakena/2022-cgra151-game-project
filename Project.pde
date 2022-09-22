@@ -1,30 +1,38 @@
-boolean DEBUG_disableAccelerationRampAndMomentum = false;
-int windowSize = 16;
-float tileSize = 800/20;
 GameState state;
-int bgHue;
-int lastPlayer1ColorChangeFrame = 0;
-int lastPlayer2ColorChangeFrame = 0;
+PFont spaceFont;
 void setup() {
   size(800,800);
+  spaceFont = createFont("space-font.otf", 14);
+  textFont(spaceFont, 128);
   noStroke();
-  smooth();
-  frameRate(60);
+  smooth(8);
   colorMode(HSB, 360, 100, 100);
   
-  Globals.colors = new ArrayList<>(Arrays.asList(
+  Globals.colors = new ArrayList<Integer>(Arrays.asList(
     color(130,65,73),
     color(346, 69, 42),
     color(44,98,72),
     color(181,93,72)
-  ));;
+  ));
   
   state = new GameState();
-  state.player1 = new PlayerState(new ControlScheme('A', 'D', 'W', 'S'), Globals.colors.get((int) random(0, Globals.colors.size())));
-  state.player2 = new PlayerState(new ControlScheme(LEFT, RIGHT, UP, DOWN), Globals.colors.get((int) random(0, Globals.colors.size())));
+  state.allPlayers.add(new PlayerState(new ControlScheme('A', 'D', 'W', 'S', ' '), Globals.colors.get((int) random(0, Globals.colors.size()))));
+  state.allPlayers.add(new PlayerState(new ControlScheme(LEFT, RIGHT, UP, DOWN, CONTROL), Globals.colors.get((int) random(0, Globals.colors.size()))));
   
-  bgHue = (int) random(0,360);
   state.timeStart = System.currentTimeMillis();
+  initGames();
+  state.stage = Stage.Play;
+  state.game = new MainMenu();
+}
+
+void load() {
+  state.objects = new ArrayList<Drawable>();
+  for (int i = 0; i < state.allPlayers.size(); i++) {
+    PlayerState p = state.allPlayers.get(i);
+    p.entity = new PlayerEntity(new PVector(i*150, 150), p.controlScheme, p.chosenColor);
+  }
+  state.stage = Stage.Play;
+  state.game.init();
 }
 
 void draw() {
@@ -35,22 +43,17 @@ void draw() {
   
   drawBackground();
   
-  if (Globals.debugMode) {
-    debug_printInputs();
-  }
-  
   switch (state.stage) {
-    case CharacterSelect:
-      drawCharacterSelect();
-      break;
     case Load:
-      state.objects = new ArrayList<Drawable2D>();
-      state.objects.add(new CircleEntity2D(new PVector(width/2, width/2), 40, new PuckEntityTexture()));
-      state.objects.add(new Wall(tileSize*2, tileSize*4, tileSize*2, tileSize*2, new DefaultWallTexture()));
-      state.objects.add(new Wall(450, 450, 100, 200, new DefaultWallTexture()));
-      state.objects.add(new PlayerEntity(new PVector(150,150), state.player1.controlScheme, state.player1.chosenColor));
-      state.objects.add(new PlayerEntity(new PVector(300,300), state.player2.controlScheme, state.player2.chosenColor));
+      state.objects = new ArrayList<Drawable>();
+      int i = 1;
+      for (PlayerState player : state.allPlayers) {
+        player.entity = new PlayerEntity(new PVector(i*150, 150), player.controlScheme, player.chosenColor);
+        i++;
+      }
+      state.introStartTime = System.currentTimeMillis();
       state.stage = Stage.Play;
+      state.game.init();
       break;
     case Play:
       drawGame();
@@ -58,71 +61,26 @@ void draw() {
     default:
       break;
   }
-  
-  long frameEnd = System.currentTimeMillis();
-  fill(color(360,0,100));
-  
-  textAlign(LEFT);
-  text("f="+state.frame + " msec="+(System.currentTimeMillis()-state.timeStart) + 
-  " rate="+((System.currentTimeMillis()-state.timeStart)/state.frame) + 
-  " frame_time=" + (frameEnd-frameStart) + " stage="+state.stage, 0, 40);
-  
+  if (Globals.debugMode) {
+      DEBUG_printFrameData(frameStart, System.currentTimeMillis());
+  }
 }
 
-void drawCharacterSelect() {
-  textSize(20);
-  
-  float sectionStart = 0.1*width;
-  float sectionWidth = width-(sectionStart*2);
-  float sectionSeparator = 0.2*sectionWidth;
-  float selectSize = (sectionWidth-sectionSeparator)/2;
-  
-  textAlign(CENTER);
-  
-  rect(sectionStart, 0.2*width, selectSize, selectSize);
-  text("PLAYER 1", sectionStart+(selectSize/2), (0.2*width)+selectSize+25);
-  text("Use A and D to change", sectionStart+(selectSize/2), (0.2*width)+selectSize+50);
-  playerTriangle((0.2*width)+(selectSize/4), (0.2*width)+(selectSize/2), 80, state.player1.chosenColor, state.frame%360, 0);
-  
-  rect(sectionStart+selectSize+sectionSeparator, 0.2*width, selectSize, selectSize);
-  text("PLAYER 2", (sectionStart+selectSize+sectionSeparator)+(selectSize/2), (0.2*width)+selectSize+25);
-  text("Use left and right arrow to change", (sectionStart+selectSize+sectionSeparator)+(selectSize/2), (0.2*width)+selectSize+50);
-  playerTriangle((0.2*width)+(sectionSeparator)+(selectSize)+(selectSize/4), (0.2*width)+(selectSize/2), 80, state.player2.chosenColor, state.frame%360, 0);
-  
-  text("ENTER TO START", (width/2), 0.8*height);
-  
-  if (getInput(ENTER)) {
-    state.stage = Stage.Load;
-  }
-  if (state.player1.controlScheme.left()) {
-    state.player1.previousColor();
-  }
-  if (state.player1.controlScheme.right()) {
-    state.player1.nextColor();
-  }
-  
-  if (state.player2.controlScheme.left()) {
-    state.player2.previousColor();
-  }
-  if (state.player2.controlScheme.right()) {
-    state.player2.nextColor();
-  }
-}
 
 void drawGame() {
-  
   // Draw begins
-  //drawBackground();
   textSize(20);
   
-  if (getInput(BACKSPACE) || getInput(DELETE)) {
-    state.stage = Stage.CharacterSelect;
-    return;
+  if (getInputDebounced(BACKSPACE) || getInputDebounced(DELETE)) {
+    if (!state.history.empty()) { 
+      switchGameNoSave(state.history.pop()); 
+      return; 
+    }
   }
   
-  // Simulation stage
-  ArrayList<GameObject2D> colliders = new ArrayList<GameObject2D>();
-  for (Drawable2D obj : state.objects) {
+  // Simulate physics for all objects loaded by the current game
+  ArrayList<PhysicsObject> colliders = new ArrayList<PhysicsObject>();
+  for (Drawable obj : state.objects) {
     if (obj instanceof CircleCollider2D) {
       CircleCollider2D collider = (CircleCollider2D) obj;
       PVector pos = collider.getPosition();
@@ -139,7 +97,7 @@ void drawGame() {
         collider.setVelocity(new PVector(vel.x,vel.y*-1));
       }
       
-      for (Drawable2D obj2 : state.objects) {
+      for (Drawable obj2 : state.objects) {
         if (obj2 instanceof Wall) {
           Wall wall = (Wall) obj2;
           float wallCenterX = wall.position.x + (wall.dimensions.x/2);
@@ -194,7 +152,8 @@ void drawGame() {
   }
   
   // Draw stage
-  for (Drawable2D obj : state.objects) {
+  for (Drawable obj : state.objects) {
     obj.draw();
   }
+  if (state.game != null) state.game.draw();
 }

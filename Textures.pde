@@ -46,18 +46,20 @@ class ColoredPlayerTexture implements EntityTexture {
 }
 
 class PuckEntityTexture implements EntityTexture {
+  int baseColor;
+  PuckEntityTexture(int base) {
+    this.baseColor = base;
+  }
   void draw(float x, float y, float width, float height) {
-    color inner = color(228, 48, 69);
-    color outer = color(228, 74, 61);
     color black = color(0,0,0);
     
-    fill(outer);
+    fill(baseColor);
     circle(x,y,width);
     
     fill(black);
     circle(x,y,width*(2.0/3));
     
-    fill(inner);
+    fill(baseColor);
     circle(x,y,width*(1.0/3));
   }
 }
