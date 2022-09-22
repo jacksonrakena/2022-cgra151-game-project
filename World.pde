@@ -94,6 +94,7 @@ class Wall implements Drawable {
 }
 
 void button(float x, float y, float w, float h, String label, Game action) {
+  textAlign(CENTER, CENTER);
   fill(0,0,100);
   rect(x, y, w, h);
   fill(0,0,0);

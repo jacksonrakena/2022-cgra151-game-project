@@ -7,6 +7,7 @@ void setup() {
   noStroke();
   smooth(8);
   colorMode(HSB, 360, 100, 100);
+  textAlign(CENTER, CENTER);
   
   Globals.colors = new ArrayList<Integer>(Arrays.asList(
     color(130,65,73),

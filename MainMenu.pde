@@ -31,11 +31,16 @@ class ControlsMenu extends Game {
     text("THE CONTROLS", 0.5*width, 0.1*height);
     
     textSize(25);
+    String about = "Cosmos Conflict is a multiplayer event-based game.\nPick a game to play, or click Random.";
     String player1 = "Player 1 (the leftie), uses W-A-S-D, and the SPACE BAR to shoot.";
     String player2 = "Player 2 (the rightie) uses the arrow-keys to move, and the CONTROL key to shoot.";
     String shoot = "Shooting is only available in some games.";
     String separator = "\n\n";
-    text(player1+separator+player2+separator+shoot+separator+separator+"Press backspace at any time to go back.", 0.1*width, 0.3*height, 0.8*width, 0.7*height);
+    text(combine(about,player1,player2,shoot,separator,"Press backspace at any time to go back."), 0.1*width, 0.3*height, 0.8*width, 0.7*height);
+  }
+  
+  String combine(String... inputs) {
+    return String.join("\n\n", inputs);
   }
   
   void init() {}

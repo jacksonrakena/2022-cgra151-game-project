@@ -40,7 +40,8 @@ class GameSelect extends Game {
     textSize(20);
     float gameSelectStartH = (0.6*height);
     float gameSelectSectionH = (height-gameSelectStartH);
-    float gameSelectBoxHeight = 0.8*gameSelectSectionH;
+    float randomSelectHeight = 100;
+    float gameSelectBoxHeight = (0.8*gameSelectSectionH) - randomSelectHeight;
     float gameSelectStartW = 0.1*width;
     float widthOfGSelectBox = (width-(gameSelectStartW*2))/(gameOptions.size());
     for (int i = 0; i < gameOptions.size(); i++) {
@@ -61,6 +62,20 @@ class GameSelect extends Game {
       float textPadding = 0.95;
       text("\"" + g.getName() + "\"", x+(w/2), y+(0.3*h));
       text(g.getDescription(), x+(((1-textPadding)/2)*w), y+(0.3*h)+10, textPadding*w, h/2);
+    }
+    float x = gameSelectStartW;
+    float y = gameSelectStartH+gameSelectBoxHeight+10;
+    float w = width-(gameSelectStartW*2);
+    float h = randomSelectHeight;
+    
+    fill(0,0,100);
+    rect(x,y,w,h);
+    fill(color(0,0,0));
+    textAlign(CENTER, CENTER);
+    textSize(40);
+    text("RANDOM", x, y, w, h);
+    if (regionClicked(x,y,w,h)) {
+      switchGame(gameOptions.get(randInt(0, gameOptions.size())));
     }
   }
   
