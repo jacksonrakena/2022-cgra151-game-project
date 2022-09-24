@@ -16,8 +16,8 @@ class FaceOffGame extends Game {
     for (Wall w : this.foMap.walls) {
       state.objects.add(w);
     }
-    state.player1().entity.setPosition(new PVector(100,100));
-    state.player2().entity.setPosition(new PVector(400,400));
+    state.player1().entity.position = new PVector(100,100);
+    state.player2().entity.position = new PVector(400,400);
     state.objects.add(state.player1().entity);
     state.objects.add(state.player2().entity);
   }
@@ -26,6 +26,10 @@ class FaceOffGame extends Game {
       controller.step();
     }
   }
+}
+
+PVector calculateForwardVector(float angle) {
+  return new PVector((float)(-1 * Math.sin(radians(angle+180))), (float)(Math.cos(radians(angle+180))));
 }
 
 class PlayerProjectileController {
@@ -42,23 +46,14 @@ class PlayerProjectileController {
         fire();
       }
     }
-    for (CircleEntity2D projectile : projectiles) {
-      for (PlayerState p : state.allPlayers) {
-        //if (p != this.player && projectile.colliding(p.entity)) {
-        // println("collision"); 
-        // projectile.disabled = true;
-        // state.objects.remove(projectile);
-        //}
-      }
-    }
   }
   
   void fire() {
-    CircleEntity2D projectile = new Projectile(this.player.entity.getPosition().copy().add(
-        this.player.entity.calculateForwardVector().normalize().mult(50)
+    CircleEntity2D projectile = new Projectile(this.player.entity.position.copy().add(
+        calculateForwardVector(this.player.entity.angle).copy().normalize().mult(50)
       ), 20, new PuckEntityTexture(this.player.chosenColor));
     projectile.setMomentum(1);
-    projectile.addVelocity(this.player.entity.calculateForwardVector().mult(200));
+    projectile.addVelocity(this.player.entity.calculateForwardVector().copy().normalize().mult(200));
     projectiles.add(projectile);
     state.objects.add(projectile);
   }
@@ -69,7 +64,7 @@ class Projectile extends CircleEntity2D {
   Projectile(PVector startingPosition, float width, EntityTexture texture) {
     super(startingPosition, width, texture);
   }
-  void onCollide(Drawable other) {
+  void onCollide(GameObject other) {
     this.disabled = true;
   }
 }

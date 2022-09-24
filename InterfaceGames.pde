@@ -1,3 +1,88 @@
+abstract class Game {
+  void draw() {
+    
+  }
+  
+  void init() {
+    
+  }
+  
+  abstract String getName();
+  abstract String getDescription();
+}
+
+ArrayList<Game> gameOptions = new ArrayList<Game>();
+
+void initGames() {
+  gameOptions.add(new RaceGame());
+  gameOptions.add(new FaceOffGame());
+  gameOptions.add(new CollectGame());
+}
+
+void switchGame(Game g) {
+  if (state.game.getName() == null) state.navigationTreeHistory.push(state.game);
+  switchGameNoSave(g);
+}
+
+void switchGameNoSave(Game g) {
+  state.game = g;
+  state.stage = Stage.Load;
+}
+
+enum Stage {
+  Load,
+  Paused,
+  Play
+}
+
+class MainMenu extends Game {
+  String getName() { return null; }
+  String getDescription() { return null; }
+  void draw() {
+    textSize(20);
+    
+    textAlign(CENTER);
+    fill(0,0,100);
+    textSize(40);
+    text("COSMOS CONFLICT", 0.5*width, 0.1*height);
+    
+    float buttonStartingH = 0.3*height;
+    float buttonW = 0.3*width;
+    float buttonStartingWidth = (width-buttonW)/2;
+    
+    button(buttonStartingWidth, buttonStartingH, buttonW, 100, "PLAY", new GameSelect());
+    button(buttonStartingWidth, buttonStartingH+150, buttonW, 100, "CONTROLS", new ControlsMenu());
+    button(buttonStartingWidth, buttonStartingH+300, buttonW, 100, "QUIT", null);
+  }
+  
+  void init() {}
+}
+
+class ControlsMenu extends Game {
+  String getName() { return null; }
+  String getDescription() { return null; }
+  void draw() {
+    textAlign(CENTER);
+    fill(0,0,100);
+    textSize(40);
+    text("THE CONTROLS", 0.5*width, 0.1*height);
+    
+    textSize(25);
+    String about = "Cosmos Conflict is a multiplayer event-based game.\nPick a game to play, or click Random.";
+    String player1 = "Player 1 (the leftie), uses W-A-S-D, and the SPACE BAR to shoot.";
+    String player2 = "Player 2 (the rightie) uses the arrow-keys to move, and the CONTROL key to shoot.";
+    String shoot = "Shooting is only available in some games.";
+    String separator = "\n\n";
+    text(combine(about,player1,player2,shoot,separator,"Press backspace at any time to go back."), 0.1*width, 0.3*height, 0.8*width, 0.7*height);
+  }
+  
+  String combine(String... inputs) {
+    return String.join("\n\n", inputs);
+  }
+  
+  void init() {}
+}
+
 class GameSelect extends Game {
   String getName() { return null; }
   String getDescription() { return null; }
@@ -83,5 +168,19 @@ class GameSelect extends Game {
   
   void init() {
     state.objects.clear();
+  }
+}
+
+class EndGame {
+  PlayerState winner;
+  long start = 0;
+  EndGame(PlayerState winner) {
+    start = System.currentTimeMillis();
+  }
+  
+  void draw() {
+    if (System.currentTimeMillis() - start < 2000) {
+     text((state.player1() == winner ? "Player 1" : "Player 2") + " wins!", width/2, height/2);
+    } else switchGame(new MainMenu());
   }
 }

@@ -77,9 +77,8 @@ void drawBackground() {
   stars = newStars;
 }
 
-class World implements BoxCollider, Drawable {
-  boolean enabled() { return true; }
-  LineSegment[] getCollidableSegments() {
+class World extends GameObject implements LineCollider {
+  LineSegment[] getLines() {
     LineSegment[] result = new LineSegment[4];
     result[0] = new LineSegment(new PVector(0,0), new PVector(width, 0));
     result[1] = new LineSegment(new PVector(0,0), new PVector(0, height));
@@ -87,11 +86,9 @@ class World implements BoxCollider, Drawable {
     result[3] = new LineSegment(new PVector(0, height), new PVector(width, height));
     return result;
   }
-  void draw(){}
-  void step(){}
 }
 
-class Wall implements Drawable, BoxCollider {
+class Wall extends GameObject implements BoxCollider {
   boolean enabled() { return true; }
   PVector dimensions;
   PVector position;
@@ -102,9 +99,9 @@ class Wall implements Drawable, BoxCollider {
     this.position = new PVector(x, y);
     this.texture = texture;
   }
-
-  void step() {}
+  
   void draw() {
+    super.draw();
     texture.draw(position, dimensions);
   }
   
@@ -143,5 +140,69 @@ void button(float x, float y, float w, float h, String label, Game action) {
       exit();
     }
     switchGame(action);
+  }
+}
+
+/**
+ Represents an interface for a generic entity texture.
+*/
+interface EntityTexture {
+  void draw(PVector position, PVector dimensions);
+}
+
+color changeBrightness(color in, float factor) {
+  float r = min(255, red(in)*factor);
+  float g = min(255, green(in)*factor);
+  float b = min(255, blue(in)*factor);
+  return color(r,g,b);
+}
+
+/*
+ Represents the texture for drawing player spaceships to the screen.
+*/
+class PlayerSpaceshipTexture implements EntityTexture {
+  PlayerState player;
+  PlayerSpaceshipTexture(PlayerState p) {
+    this.player = p;
+  }
+  
+  void draw(PVector position, PVector dimensions) {
+    if (this.player.entity == null) return;
+    LineSegment[] textures = this.player.entity.getCollidableSegments();
+    
+    stroke(this.player.chosenColor);
+    strokeWeight(0.25*Globals.playerWidth);
+
+    for (LineSegment l : textures) {
+      line(l.origin.x, l.origin.y, l.destination.x, l.destination.y);
+    }
+  }
+}
+
+class PuckEntityTexture implements EntityTexture {
+  int baseColor;
+  PuckEntityTexture(int base) {
+    this.baseColor = base;
+  }
+  void draw(PVector position, PVector dimensions) {
+    noStroke();
+    color black = color(0,0,0);
+    
+    fill(baseColor);
+    circle(position.x,position.y,dimensions.x);
+    
+    fill(black);
+    circle(position.x,position.y,dimensions.x*(2.0/3));
+    
+    fill(baseColor);
+    circle(position.x,position.y,dimensions.x*(1.0/3));
+  }
+}
+
+class DefaultWallTexture implements EntityTexture {
+  void draw(PVector position, PVector dimensions) {
+    fill(color(0,0,100));
+    noStroke();
+    rect(position.x, position.y, dimensions.x, dimensions.y);
   }
 }

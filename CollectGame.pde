@@ -14,8 +14,8 @@ class CollectGame extends Game {
     for (Wall w : this.foMap.walls) {
       state.objects.add(w);
     }
-    state.player1().entity.setPosition(new PVector(100,100));
-    state.player2().entity.setPosition(new PVector(400,400));
+    state.player1().entity.position = new PVector(100,100);
+    state.player2().entity.position = new PVector(400,400);
     state.objects.add(state.player1().entity);
     state.objects.add(state.player2().entity);
   }

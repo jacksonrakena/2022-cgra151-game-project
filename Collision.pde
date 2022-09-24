@@ -1,5 +1,9 @@
-interface BoxCollider extends Drawable {
+interface BoxCollider {
   LineSegment[] getCollidableSegments();
+}
+
+interface LineCollider {
+  LineSegment[] getLines();
 }
 
 class LineSegmentCollisionResult {
@@ -66,11 +70,14 @@ class LineSegment {
     return new LineSegmentCollisionResult(false, null);
   }
 }
-interface CircleCollider2D extends PhysicsObject {
-  float getRadius();
-  void addVelocity(PVector difference);
-  boolean isMovable();
-  void onCollide(Drawable other);
+abstract class CircleCollider2D extends Entity {
+  abstract float getRadius();
+  abstract void addVelocity(PVector difference);
+  abstract boolean isMovable();
+  abstract void onCollide(GameObject other);
+  CircleCollider2D(PVector startingPosition, PVector dimensions, EntityTexture texture) {
+    super(startingPosition, dimensions, texture);
+  }
 }
 
 
