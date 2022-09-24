@@ -7,6 +7,7 @@ class BgStar {
   long currentFrame;
   boolean destroyed;
   void cp_star(float x, float y, float radius1, float radius2, int npoints) {
+    noStroke();
     float angle = TWO_PI / npoints;
     float halfAngle = angle/2.0;
     beginShape();
@@ -76,12 +77,27 @@ void drawBackground() {
   stars = newStars;
 }
 
-class Wall implements Drawable {
+class World implements BoxCollider, Drawable {
+  boolean enabled() { return true; }
+  LineSegment[] getCollidableSegments() {
+    LineSegment[] result = new LineSegment[4];
+    result[0] = new LineSegment(new PVector(0,0), new PVector(width, 0));
+    result[1] = new LineSegment(new PVector(0,0), new PVector(0, height));
+    result[2] = new LineSegment(new PVector(width, 0), new PVector(width, height));
+    result[3] = new LineSegment(new PVector(0, height), new PVector(width, height));
+    return result;
+  }
+  void draw(){}
+  void step(){}
+}
+
+class Wall implements Drawable, BoxCollider {
+  boolean enabled() { return true; }
   PVector dimensions;
   PVector position;
   EntityTexture texture;
  
-  Wall(float x, float y, float width, float height, EntityTexture texture) {
+  Wall(float x, float y, float width, float height, EntityTexture texture) { 
     this.dimensions = new PVector(width, height);
     this.position = new PVector(x, y);
     this.texture = texture;
@@ -89,7 +105,30 @@ class Wall implements Drawable {
 
   void step() {}
   void draw() {
-    texture.draw(position.x,position.y,dimensions.x,dimensions.y);
+    texture.draw(position, dimensions);
+  }
+  
+  LineSegment[] getCollidableSegments() {
+    LineSegment[] result = new LineSegment[4];
+    
+    PVector topLeft = this.position.copy();
+    PVector topRight = topLeft.copy().add(new PVector(dimensions.x, 0));
+    PVector bottomRight = topLeft.copy().add(this.dimensions);
+    PVector bottomLeft = topLeft.copy().add(new PVector(0, dimensions.y));
+    
+    // Top side
+    result[0] = new LineSegment(topLeft, topRight);
+    
+    // Left side
+    result[1] = new LineSegment(topLeft, bottomLeft);
+    
+    // Right side
+    result[2] = new LineSegment(topRight, bottomRight);
+    
+    // Bottom side
+    result[2] = new LineSegment(bottomLeft, bottomRight);
+    
+    return result;
   }
 }
 

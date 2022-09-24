@@ -1,23 +1,15 @@
-class PlayerEntity extends TriangleEntity implements CircleCollider2D {
-  color col;
-  ControlScheme control;
-  float angle = 0;
+class PlayerEntity extends TriangleEntity  {
+  PlayerState state;
   
-  float getRadius() {
-    return 15;
-  }
-  
-  boolean isMovable() { return true; }
   
   void addVelocity(PVector difference) {
     this.velocity.x = max(0-Globals.playerMaximumVelocity, min(Globals.playerMaximumVelocity, this.velocity.x+difference.x));
     this.velocity.y = max(0-Globals.playerMaximumVelocity, min(Globals.playerMaximumVelocity, this.velocity.y+difference.y));
   }
   
-  PlayerEntity(PVector startingPosition, ControlScheme control, color c) {
-    super(startingPosition);
-    this.col = c;
-    this.control = control;
+  PlayerEntity(PlayerState state, PVector startingPosition) {
+    super(startingPosition, new PVector(Globals.playerWidth, 0), new ColoredPlayerTexture(state));
+    this.state = state;
   }
   
   PVector calculateForwardVector() {
@@ -28,18 +20,18 @@ class PlayerEntity extends TriangleEntity implements CircleCollider2D {
     super.step();
     float localAcceleration = DEBUG_disableAccelerationRampAndMomentum ? 1 : Globals.playerAccelerationSpeed;
     
-    if (control.right()) angle=((angle+5)%360);
-    if (control.left()) angle=(angle-5)%360;
+    if (this.state.controlScheme.right()) angle=((angle+5)%360);
+    if (this.state.controlScheme.left()) angle=(angle-5)%360;
     
     float rad = radians(angle+180);
     
     acceleratingStatus = 0;
-    if (control.y()) {
+    if (this.state.controlScheme.y()) {
       // Calculate the forward vector (in the direction the ship is facing)
       PVector forward = new PVector((float)(-1 * Math.sin(rad)), (float)(Math.cos(rad)));
       
       // Set the acceleration of this vector
-      forward.setMag((control.down() ? -1 : 1)*(localAcceleration*Globals.playerMaximumVelocity));
+      forward.setMag((this.state.controlScheme.down() ? -1 : 1)*(localAcceleration*Globals.playerMaximumVelocity));
       
       // Add the forward vector to the ship's trajectory
       velocity.add(forward);
@@ -53,6 +45,6 @@ class PlayerEntity extends TriangleEntity implements CircleCollider2D {
   }
   
   void draw() {
-    playerTriangle(this.position.x, this.position.y, 30, this.col, angle, acceleratingStatus);
+    super.draw();
   }
 }

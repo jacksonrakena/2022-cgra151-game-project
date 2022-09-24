@@ -4,7 +4,6 @@ import java.util.Stack;
 class GameState {
   Stage stage;
   Stack<Game> history = new Stack<Game>();
-  long introStartTime = 0;
   ArrayList<Drawable> objects = new ArrayList<Drawable>();
   ArrayList<Integer> colors = new ArrayList<Integer>();
   long frame;
@@ -36,6 +35,7 @@ enum Stage {
 
 static class Globals {
   static final float playerMaximumVelocity = 5;
+  static final float playerWidth = 20;
   static final float playerAccelerationSpeed = 0.05;
   static final int backgroundCycleLength = 400;
   static final boolean debugMode = true;

@@ -44,22 +44,32 @@ class PlayerProjectileController {
     }
     for (CircleEntity2D projectile : projectiles) {
       for (PlayerState p : state.allPlayers) {
-        if (p != this.player && projectile.colliding(p.entity)) {
-         println("collision"); 
-         projectile.disabled = true;
-         state.objects.remove(projectile);
-        }
+        //if (p != this.player && projectile.colliding(p.entity)) {
+        // println("collision"); 
+        // projectile.disabled = true;
+        // state.objects.remove(projectile);
+        //}
       }
     }
   }
   
   void fire() {
-    CircleEntity2D projectile = new CircleEntity2D(this.player.entity.getPosition().copy().add(
+    CircleEntity2D projectile = new Projectile(this.player.entity.getPosition().copy().add(
         this.player.entity.calculateForwardVector().normalize().mult(50)
       ), 20, new PuckEntityTexture(this.player.chosenColor));
     projectile.setMomentum(1);
     projectile.addVelocity(this.player.entity.calculateForwardVector().mult(200));
     projectiles.add(projectile);
     state.objects.add(projectile);
+  }
+}
+
+class Projectile extends CircleEntity2D {
+  boolean enabled() { return !this.disabled; }
+  Projectile(PVector startingPosition, float width, EntityTexture texture) {
+    super(startingPosition, width, texture);
+  }
+  void onCollide(Drawable other) {
+    this.disabled = true;
   }
 }

@@ -17,7 +17,7 @@ void DEBUG_printFrameData(long frameStart, long frameEnd) {
   }
   
   textAlign(LEFT);
-  text("f="+state.frame + " msec="+(System.currentTimeMillis()-state.timeStart) + 
+  text("f="+state.frame + " count=" + state.objects.size() + " msec="+(System.currentTimeMillis()-state.timeStart) + 
   " rate="+((System.currentTimeMillis()-state.timeStart)/state.frame) + 
   " frame_time=" + (frameEnd-frameStart) + " stage="+state.stage + " game="+state.game, 0, 40);
 }

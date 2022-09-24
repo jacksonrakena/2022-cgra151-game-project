@@ -30,6 +30,8 @@ GameMap readMap(String path) {
   println("Loaded " + t.getRowCount() + "x" + t.getColumnCount() +" map from " + path);
   for (int r = 0; r < t.getRowCount(); r++) {
     TableRow row = t.getRow(r);
+    int wStartCol = -1;
+    Wall cw = null;
     for (int c = 0; c < row.getColumnCount(); c++) {
       String cell = row.getString(c);
       if (!cell.equals("")) {
@@ -38,6 +40,12 @@ GameMap readMap(String path) {
         String data = components[1];
         switch (type) {
           case "w":
+            //if (cw == null) {
+            //  cw = new Wall(c*m.cellWidth,r*m.cellHeight, m.cellWidth, m.cellHeight, new DefaultWallTexture());
+            //} else {
+            //  cw.dimensions.add(m.cellWidth,0);
+            //}
+            //if (wStartCol == -1) wStartCol = c;
             m.walls.add(new Wall(c*m.cellWidth,r*m.cellHeight, m.cellWidth, m.cellHeight, new DefaultWallTexture()));
             break;
           case "m":
@@ -47,8 +55,15 @@ GameMap readMap(String path) {
             println("Unknown map entity type " + type);
             break;
         }
+        if (!type.equals("w") && cw != null) {
+          m.walls.add(cw);
+          cw = null;
+        }
       }
     }
+    //if (cw != null) {
+    //  m.walls.add(cw);
+    //}
   }
   return m;
 }

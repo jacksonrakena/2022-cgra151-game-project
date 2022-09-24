@@ -28,9 +28,10 @@ void setup() {
 
 void load() {
   state.objects = new ArrayList<Drawable>();
+  state.objects.add(new World()); 
   for (int i = 0; i < state.allPlayers.size(); i++) {
     PlayerState p = state.allPlayers.get(i);
-    p.entity = new PlayerEntity(new PVector(i*150, 150), p.controlScheme, p.chosenColor);
+    p.entity = new PlayerEntity(p, new PVector(i*150, 150));
   }
   state.stage = Stage.Play;
   state.game.init();
@@ -46,15 +47,7 @@ void draw() {
   
   switch (state.stage) {
     case Load:
-      state.objects = new ArrayList<Drawable>();
-      int i = 1;
-      for (PlayerState player : state.allPlayers) {
-        player.entity = new PlayerEntity(new PVector(i*150, 150), player.controlScheme, player.chosenColor);
-        i++;
-      }
-      state.introStartTime = System.currentTimeMillis();
-      state.stage = Stage.Play;
-      state.game.init();
+      load();
       break;
     case Play:
       drawGame();
@@ -64,6 +57,34 @@ void draw() {
   }
   if (Globals.debugMode) {
       DEBUG_printFrameData(frameStart, System.currentTimeMillis());
+  }
+}
+
+void handleCollisionBetweenBoxColliders(BoxCollider first, BoxCollider second) {
+  LineSegment[] firstBox = ((BoxCollider) first).getCollidableSegments();
+  LineSegment[] secondBox = ((BoxCollider) second).getCollidableSegments();
+  
+  for (LineSegment firstLine : firstBox) {
+    for (LineSegment secondLine : secondBox) {
+      if (firstLine == null || secondLine == null) continue;
+      LineSegmentCollisionResult result = firstLine.intercepting(secondLine);
+      if (result.colliding) {
+        // Collision between two box colliders
+        stroke(66,91,47);
+        point(result.pointOfCollision.x, result.pointOfCollision.y);
+        
+        Entity2D target = null;
+        if (first instanceof Entity2D) target = ((Entity2D) first);
+        else if (second instanceof Entity2D) target = ((Entity2D) second);
+        if (target == null) continue;
+        if (target.lastOperationFrame < state.frame) {
+          println("Pushing back on " + target);
+          PVector t = target.getVelocity();
+          target.setVelocity(new PVector(t.x*-1,t.y*-1));
+          target.lastOperationFrame = state.frame + 10;
+        }
+      }
+    }
   }
 }
 
@@ -78,12 +99,52 @@ void drawGame() {
       return; 
     }
   }
+    // Draw stage
+  for (Drawable obj : state.objects) {
+    obj.draw();
+  }
   
   // Simulate physics for all objects loaded by the current game
   ArrayList<PhysicsObject> colliders = new ArrayList<PhysicsObject>();
-  for (Drawable obj : state.objects) {
-    if (obj instanceof CircleCollider2D) {
-      CircleCollider2D collider = (CircleCollider2D) obj;
+  
+  // Collisions
+  for (Drawable first : state.objects) {
+    if (!first.enabled()) continue;
+    
+    // Check this object against all other objects in the scene
+    for (Drawable second : state.objects) {
+      if (!second.enabled()) continue;
+      
+      // Do not collide an object against itself
+      if (first == second) continue;
+      
+      // Handle two box colliders (triangles, rectangles, boxes) hitting each other
+      if (first instanceof BoxCollider && second instanceof BoxCollider) {
+        
+        // If both box colliders aren't movable (i.e. two walls), don't simulate
+        if (!(first instanceof PhysicsObject) && !(second instanceof PhysicsObject)) continue;
+        
+        // Check each line against each other line
+        handleCollisionBetweenBoxColliders((BoxCollider) first, (BoxCollider) second);
+      }
+      
+      // Handle a circle collider intersecting with a box collider
+      if (first instanceof BoxCollider && second instanceof CircleCollider2D) {
+        BoxCollider box = ((BoxCollider) first);
+        CircleCollider2D circle = ((CircleCollider2D) second);
+        circle.getPosition();
+        if (isPointInsideTriangle(circle.getPosition(), box.getCollidableSegments()[0].origin, box.getCollidableSegments()[1].origin, box.getCollidableSegments()[2].origin)) {
+          println("Point collision between " + box + " and " + circle + " at " + System.currentTimeMillis());
+          circle.onCollide(box);
+        }
+      }
+    }
+    
+    // Legacy circle code
+    // TODO remove
+    if (first instanceof CircleCollider2D) {
+      if (!first.enabled()) continue;
+      CircleCollider2D collider = (CircleCollider2D) first;
       PVector pos = collider.getPosition();
       PVector vel = collider.getVelocity();
       
@@ -99,6 +160,7 @@ void drawGame() {
       }
       
       for (Drawable obj2 : state.objects) {
+        if (!obj2.enabled()) continue;
         if (obj2 instanceof Wall) {
           Wall wall = (Wall) obj2;
           float wallCenterX = wall.position.x + (wall.dimensions.x/2);
@@ -129,7 +191,7 @@ void drawGame() {
           }
         }
         
-        if (obj2 instanceof CircleCollider2D && obj2 != obj) {
+        if (obj2 instanceof CircleCollider2D && obj2 != first) {
           CircleCollider2D obj2c = (CircleCollider2D) obj2;
           boolean colliding = Math.hypot(abs(obj2c.getPosition().x-collider.getPosition().x), abs(obj2c.getPosition().y-collider.getPosition().y)) <= (obj2c.getRadius()+collider.getRadius());
           if (colliding && !colliders.contains(collider)) {
@@ -149,12 +211,12 @@ void drawGame() {
         }
       }
     }
-    obj.step();
+    first.step();
   }
   
-  // Draw stage
-  for (Drawable obj : state.objects) {
-    obj.draw();
-  }
+  //// Draw stage
+  //for (Drawable obj : state.objects) {
+  //  obj.draw();
+  //}
   if (state.game != null) state.game.draw();
 }

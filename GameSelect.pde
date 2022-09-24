@@ -18,11 +18,11 @@ class GameSelect extends Game {
     PlayerState p1 = state.allPlayers.get(0);
     text("Player 1", sectionStart+(selectSize/2), (0.2*vheight)+selectSize+25);
     text("Use A and D to change", sectionStart+(selectSize/2), (0.2*vheight)+selectSize+50);
-    playerTriangle((0.2*width)+(selectSize/4), (0.2*vheight)+(selectSize/2), 80, p1.chosenColor, state.frame%360, 0);
+    //playerTriangle((0.2*width)+(selectSize/4), (0.2*vheight)+(selectSize/2), 80, p1.chosenColor, state.frame%360, 0);
     PlayerState p2 = state.allPlayers.get(1);
     text("Player 2", (sectionStart+selectSize+sectionSeparator)+(selectSize/2), (0.2*vheight)+selectSize+25);
     text("Use left and right arrow to change", (sectionStart+selectSize+sectionSeparator)+(selectSize/2), (0.2*vheight)+selectSize+50);
-    playerTriangle((0.2*width)+(sectionSeparator)+(selectSize)+(selectSize/4), (0.2*vheight)+(selectSize/2), 80, p2.chosenColor, state.frame%360, 0);
+    //playerTriangle((0.2*width)+(sectionSeparator)+(selectSize)+(selectSize/4), (0.2*vheight)+(selectSize/2), 80, p2.chosenColor, state.frame%360, 0);
     
     for (PlayerState p : state.allPlayers) {
       if (p.controlScheme.left()) p.previousColor();
@@ -56,6 +56,7 @@ class GameSelect extends Game {
         switchGame(g);
       }
       fill(0,0,100);
+      noStroke();
       rect(x, y, w, h);
       fill(color(0,0,0));
       
@@ -70,6 +71,7 @@ class GameSelect extends Game {
     
     fill(0,0,100);
     rect(x,y,w,h);
+    noStroke();
     fill(color(0,0,0));
     textAlign(CENTER, CENTER);
     textSize(40);

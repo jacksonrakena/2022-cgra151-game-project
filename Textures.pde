@@ -1,30 +1,25 @@
-void playerTriangle(float x, float y, float width, color c, float angleDegrees, int acceleratingStatus) {
-  pushMatrix();
-  translate(x, y);
-  stroke(c);
-  strokeWeight(8);
-  rotate(radians(angleDegrees));
+interface EntityTexture {
+  void draw(PVector position, PVector dimensions);
+}
+
+LineSegment[] createPlayerTriangle(float x, float y, float width, float angleDegrees) {
   float nw = width;
   float nh = 1.2*nw;
   
   float halfw = nw/2;
   float halfh = nh/2;
-  line(0, 0-halfh, 0-halfw, 0+halfh);
-  line(0-halfw, 0+halfh, 0, (0+(halfh/2)));
-  line(0, (0+(halfh/2)), 0+halfw, 0+halfh);
-  line(0+halfw, 0+halfh, 0, 0-halfh);
-  strokeWeight(0);
-  if (acceleratingStatus != 0) {
-      for (int i = 0; i < acceleratingStatus; i++) {
-        fill(color(i == 0 ? 55 : i == 1 ? 46 : 0 , 100, 100));
-        circle(0, 0+(nh-10)+(i*15), 10);
-      }
-  }
-  popMatrix();
-}
-
-interface EntityTexture {
-  void draw(float x, float y, float width, float height);
+  PVector position = new PVector(x,y);
+  float rads = radians(angleDegrees);
+  LineSegment[] result = new LineSegment[4];
+  PVector v0 = new PVector(0, 0-halfh).rotate(rads).add(position);
+  PVector v1 = new PVector(0-halfw, 0+halfh).rotate(rads).add(position);
+  PVector v2 = new PVector(0, halfh/2).rotate(rads).add(position);
+  PVector v3 = new PVector(0+halfw, 0+halfh).rotate(rads).add(position);
+  result[0] = new LineSegment(v0, v1);
+  result[1] = new LineSegment(v1, v2);
+  result[2] = new LineSegment(v2, v3);
+  result[3] = new LineSegment(v3, v0);
+  return result;
 }
 
 color changeBrightness(color in, float factor) {
@@ -35,13 +30,21 @@ color changeBrightness(color in, float factor) {
 }
 
 class ColoredPlayerTexture implements EntityTexture {
-  color c;
-  ColoredPlayerTexture() {
-    this.c = color(random(0,360),80,100);
+  PlayerState player;
+  ColoredPlayerTexture(PlayerState p) {
+    this.player = p;
   }
   
-  void draw(float x, float y, float width, float height) {
+  void draw(PVector position, PVector dimensions) {
+    if (this.player.entity == null) return;
+    LineSegment[] textures = createPlayerTriangle(this.player.entity.position.x, this.player.entity.position.y, Globals.playerWidth, this.player.entity.angle);
     
+    stroke(this.player.chosenColor);
+    strokeWeight(0.25*Globals.playerWidth);
+
+    for (LineSegment l : textures) {
+      line(l.origin.x, l.origin.y, l.destination.x, l.destination.y);
+    }
   }
 }
 
@@ -50,23 +53,25 @@ class PuckEntityTexture implements EntityTexture {
   PuckEntityTexture(int base) {
     this.baseColor = base;
   }
-  void draw(float x, float y, float width, float height) {
+  void draw(PVector position, PVector dimensions) {
+    noStroke();
     color black = color(0,0,0);
     
     fill(baseColor);
-    circle(x,y,width);
+    circle(position.x,position.y,dimensions.x);
     
     fill(black);
-    circle(x,y,width*(2.0/3));
+    circle(position.x,position.y,dimensions.x*(2.0/3));
     
     fill(baseColor);
-    circle(x,y,width*(1.0/3));
+    circle(position.x,position.y,dimensions.x*(1.0/3));
   }
 }
 
 class DefaultWallTexture implements EntityTexture {
-  void draw(float x, float y, float width, float height) {
+  void draw(PVector position, PVector dimensions) {
     fill(color(0,0,100));
-    rect(x,y,width,height);
+    noStroke();
+    rect(position.x, position.y, dimensions.x, dimensions.y);
   }
 }
