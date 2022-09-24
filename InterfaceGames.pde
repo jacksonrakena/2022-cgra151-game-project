@@ -86,13 +86,26 @@ class ControlsMenu extends Game {
 class GameSelect extends Game {
   String getName() { return null; }
   String getDescription() { return null; }
+  float sectionStart = 0.1*width;
+  float sectionWidth = width-(sectionStart*2);
+  float sectionSeparator = 0.2*sectionWidth;
+  float vheight = 0.5*height;
+  float selectSize = (sectionWidth-sectionSeparator)/2;
+
+  void init() {
+    state.objects.clear();
+    state.player1().entity.position = new PVector((0.2*width)+(selectSize/4), (0.2*vheight)+(selectSize/2));
+    state.player1().entity.dimensions = new PVector(80,80);
+    state.player1().entity.angle = 180;
+    
+    state.player2().entity.position = new PVector((0.2*width)+(sectionSeparator)+(selectSize)+(selectSize/4), (0.2*vheight)+(selectSize/2));
+    state.player2().entity.dimensions = new PVector(80,80);
+    state.player2().entity.angle = 180;
+    state.objects.add(state.player1().entity);
+    state.objects.add(state.player2().entity);
+  }
   void draw() {
     textSize(20);
-    float sectionStart = 0.1*width;
-    float sectionWidth = width-(sectionStart*2);
-    float sectionSeparator = 0.2*sectionWidth;
-    float vheight = 0.5*height;
-    float selectSize = (sectionWidth-sectionSeparator)/2;
     
     textAlign(CENTER);
     fill(0,0,100);
@@ -100,14 +113,14 @@ class GameSelect extends Game {
     text("Choose your color", 0.5*width, 0.1*height);
     textSize(20);
     fill(0,0,100);
-    PlayerState p1 = state.allPlayers.get(0);
+
+    state.player1().entity.angle = state.frame%360;
+    state.player2().entity.angle = state.frame%360;
     text("Player 1", sectionStart+(selectSize/2), (0.2*vheight)+selectSize+25);
     text("Use A and D to change", sectionStart+(selectSize/2), (0.2*vheight)+selectSize+50);
-    //playerTriangle((0.2*width)+(selectSize/4), (0.2*vheight)+(selectSize/2), 80, p1.chosenColor, state.frame%360, 0);
-    PlayerState p2 = state.allPlayers.get(1);
+
     text("Player 2", (sectionStart+selectSize+sectionSeparator)+(selectSize/2), (0.2*vheight)+selectSize+25);
     text("Use left and right arrow to change", (sectionStart+selectSize+sectionSeparator)+(selectSize/2), (0.2*vheight)+selectSize+50);
-    //playerTriangle((0.2*width)+(sectionSeparator)+(selectSize)+(selectSize/4), (0.2*vheight)+(selectSize/2), 80, p2.chosenColor, state.frame%360, 0);
     
     for (PlayerState p : state.allPlayers) {
       if (p.controlScheme.left()) p.previousColor();
@@ -164,10 +177,6 @@ class GameSelect extends Game {
     if (regionClicked(x,y,w,h)) {
       switchGame(gameOptions.get(randInt(0, gameOptions.size())));
     }
-  }
-  
-  void init() {
-    state.objects.clear();
   }
 }
 

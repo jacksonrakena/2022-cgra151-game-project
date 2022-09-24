@@ -40,7 +40,7 @@ class PlayerState {
   controlling the player's spaceship velocity and position.
 */
 class PlayerEntity extends TriangleEntity  {
-  PlayerState state;
+  PlayerState playerState;
   void addVelocity(PVector difference) {
     this.velocity.x = max(0-Globals.playerMaximumVelocity, min(Globals.playerMaximumVelocity, this.velocity.x+difference.x));
     this.velocity.y = max(0-Globals.playerMaximumVelocity, min(Globals.playerMaximumVelocity, this.velocity.y+difference.y));
@@ -48,7 +48,7 @@ class PlayerEntity extends TriangleEntity  {
   
   PlayerEntity(PlayerState state, PVector startingPosition) {
     super(startingPosition, new PVector(Globals.playerWidth, 0), new PlayerSpaceshipTexture(state));
-    this.state = state;
+    this.playerState = state;
   }
   
   PVector calculateForwardVector() {
@@ -58,19 +58,20 @@ class PlayerEntity extends TriangleEntity  {
   void step() {
     super.step();
     float localAcceleration = DEBUG_disableAccelerationRampAndMomentum ? 1 : Globals.playerAccelerationSpeed;
+    if (state.game instanceof GameSelect) return;
     
-    if (this.state.controlScheme.right()) angle=((angle+5)%360);
-    if (this.state.controlScheme.left()) angle=(angle-5)%360;
+    if (this.playerState.controlScheme.right()) angle=((angle+5)%360);
+    if (this.playerState.controlScheme.left()) angle=(angle-5)%360;
     
     float rad = radians(angle+180);
     
     acceleratingStatus = 0;
-    if (this.state.controlScheme.y()) {
+    if (this.playerState.controlScheme.y()) {
       // Calculate the forward vector (in the direction the ship is facing)
       PVector forward = new PVector((float)(-1 * Math.sin(rad)), (float)(Math.cos(rad)));
       
       // Set the acceleration of this vector
-      forward.setMag((this.state.controlScheme.down() ? -1 : 1)*(localAcceleration*Globals.playerMaximumVelocity));
+      forward.setMag((this.playerState.controlScheme.down() ? -1 : 1)*(localAcceleration*Globals.playerMaximumVelocity));
       
       // Add the forward vector to the ship's trajectory
       velocity.add(forward);
