@@ -1,5 +1,5 @@
 class GameMap {
- ArrayList<Wall> walls = new ArrayList<Wall>();
+ //ArrayList<Wall> walls = new ArrayList<Wall>();
  int cellWidth;
  int cellHeight;
  ArrayList<MapMarker> markers = new ArrayList<MapMarker>();
@@ -10,14 +10,16 @@ class MapMarker {
   float y;
   float height;
   float width;
-  String type;
+  String id;
+  String data;
   
-  MapMarker(float x, float y, float width, float height, String type) {
+  MapMarker(float x, float y, float width, float height, String id, String data) {
     this.x = x;
     this.y = y;
     this.height = height;
     this.width = width;
-    this.type = type;
+    this.id = id;
+    this.data = data;
   }
 }
 
@@ -30,40 +32,29 @@ GameMap readMap(String path) {
   println("Loaded " + t.getRowCount() + "x" + t.getColumnCount() +" map from " + path);
   for (int r = 0; r < t.getRowCount(); r++) {
     TableRow row = t.getRow(r);
-    int wStartCol = -1;
-    Wall cw = null;
     for (int c = 0; c < row.getColumnCount(); c++) {
       String cell = row.getString(c);
       if (!cell.equals("")) {
         String[] components = cell.split(":");
         String type = components[0];
         String data = components[1];
-        switch (type) {
-          case "w":
+        m.markers.add(new MapMarker(c*m.cellWidth, r*m.cellHeight, m.cellWidth, m.cellHeight, type, data));
+          //case "w":
             //if (cw == null) {
             //  cw = new Wall(c*m.cellWidth,r*m.cellHeight, m.cellWidth, m.cellHeight, new DefaultWallTexture());
             //} else {
             //  cw.dimensions.add(m.cellWidth,0);
             //}
             //if (wStartCol == -1) wStartCol = c;
-            m.walls.add(new Wall(c*m.cellWidth,r*m.cellHeight, m.cellWidth, m.cellHeight, new DefaultWallTexture()));
-            break;
-          case "m":
-            m.markers.add(new MapMarker(c*m.cellWidth, r*m.cellHeight, m.cellWidth, m.cellHeight, data));
-            break;
-          default:
-            println("Unknown map entity type " + type);
-            break;
-        }
-        if (!type.equals("w") && cw != null) {
-          m.walls.add(cw);
-          cw = null;
-        }
+            //m.walls.add(new Wall(c*m.cellWidth,r*m.cellHeight, m.cellWidth, m.cellHeight, new DefaultWallTexture()));
+            //break;
+
+        //if (!type.equals("w") && cw != null) {
+          //m.walls.add(cw);
+          //cw = null;
+        //}
       }
     }
-    //if (cw != null) {
-    //  m.walls.add(cw);
-    //}
   }
   return m;
 }

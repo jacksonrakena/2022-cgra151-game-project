@@ -6,6 +6,19 @@ interface LineCollider {
   LineSegment[] getLines();
 }
 
+LineSegment[] generateLineSegmentsFromBox(float x, float y, float w, float h) {
+  LineSegment[] segments = new LineSegment[4];
+  PVector topleft = new PVector(x, y);
+  PVector topright = new PVector(x+w, y);
+  PVector bottomleft = new PVector(x, y+h);
+  PVector bottomright = new PVector(x+w,y+h);
+  segments[0] = new LineSegment(topleft, topright);
+  segments[1] = new LineSegment(topright, bottomright);
+  segments[2] = new LineSegment(bottomright, bottomleft);
+  segments[3] = new LineSegment(bottomleft, topleft);
+  return segments;
+}
+
 class LineSegmentCollisionResult {
   boolean colliding = false;
   PVector pointOfCollision = null;

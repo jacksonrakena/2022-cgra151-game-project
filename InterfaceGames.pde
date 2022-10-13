@@ -1,4 +1,4 @@
-abstract class Game {
+abstract class Game extends GameObject {
   void draw() {
     
   }
@@ -15,7 +15,7 @@ ArrayList<Game> gameOptions = new ArrayList<Game>();
 
 void initGames() {
   gameOptions.add(new RaceGame());
-  gameOptions.add(new FaceOffGame());
+  //gameOptions.add(new FaceOffGame());
   gameOptions.add(new CollectGame());
 }
 
@@ -69,9 +69,9 @@ class ControlsMenu extends Game {
     
     textSize(25);
     String about = "Cosmos Conflict is a multiplayer event-based game.\nPick a game to play, or click Random.";
-    String player1 = "Player 1 (the leftie), uses W-A-S-D, and the SPACE BAR to shoot.";
-    String player2 = "Player 2 (the rightie) uses the arrow-keys to move, and the CONTROL key to shoot.";
-    String shoot = "Shooting is only available in some games.";
+    String player1 = "Player 1 (the leftie), uses W-A-S-D to move.";
+    String player2 = "Player 2 (the rightie) uses the arrow-keys to move.";
+    String shoot = "";
     String separator = "\n\n";
     text(combine(about,player1,player2,shoot,separator,"Press backspace at any time to go back."), 0.1*width, 0.3*height, 0.8*width, 0.7*height);
   }
@@ -94,6 +94,7 @@ class GameSelect extends Game {
 
   void init() {
     state.objects.clear();
+    state.objects.add(new World());
     state.player1().entity.position = new PVector((0.2*width)+(selectSize/4), (0.2*vheight)+(selectSize/2));
     state.player1().entity.dimensions = new PVector(80,80);
     state.player1().entity.angle = 180;
@@ -145,15 +146,16 @@ class GameSelect extends Game {
     for (int i = 0; i < gameOptions.size(); i++) {
       Game g = gameOptions.get(i);
       
-      float x = gameSelectStartW+(i*(widthOfGSelectBox));
+      float x = 10+gameSelectStartW+(i*(widthOfGSelectBox));
       float y = gameSelectStartH;
-      float w = widthOfGSelectBox-(20/(gameOptions.size()-1));
+      float w = widthOfGSelectBox-10;
       float h = gameSelectBoxHeight;
       
       if (regionClicked(x,y,w,h)) {
         switchGame(g);
       }
-      fill(0,0,100);
+      if (!mouseInRegion(x,y,w,h)) fill(0,0,100);
+      else fill(0,0,44); 
       noStroke();
       rect(x, y, w, h);
       fill(color(0,0,0));
@@ -167,13 +169,18 @@ class GameSelect extends Game {
     float w = width-(gameSelectStartW*2);
     float h = randomSelectHeight;
     
-    fill(0,0,100);
+    if (!mouseInRegion(x,y,w,h)) fill(0,0,100);
+    else fill(0,0,44); 
     rect(x,y,w,h);
     noStroke();
     fill(color(0,0,0));
     textAlign(CENTER, CENTER);
     textSize(40);
     text("RANDOM", x, y, w, h);
+    
+    fill(0,0,100);
+    textSize(20);
+    text("Player 1     " + state.player1().points + "      -      " + state.player2().points + "     Player 2", x, y+h, w, h/2);
     if (regionClicked(x,y,w,h)) {
       switchGame(gameOptions.get(randInt(0, gameOptions.size())));
     }

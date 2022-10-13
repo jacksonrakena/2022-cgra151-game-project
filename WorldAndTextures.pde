@@ -54,28 +54,6 @@ float rand(float min, float max) {
 int randInt(int min, int max) {
   return (int) Math.floor((Math.random()*(max-min))+min);
 }
-void drawBackground() {
-  float starWmin = 5;
-  float starWmax = 12;
-  float starHmin = 5;
-  float starHmax = 12;
-  
-  float progressionPct = (state.frame%Globals.backgroundCycleLength)/(float)Globals.backgroundCycleLength;
-  if (stars == null) {
-    stars = new ArrayList<BgStar>();
-    for (int i = 0; i < 20; i++) {
-      stars.add(new BgStar((int) Math.floor(Math.random()*width), (int) Math.floor(Math.random()*height), rand(starWmin, starWmax), rand(starHmin, starHmax), Globals.backgroundCycleLength, (long)(Math.random()*Globals.backgroundCycleLength)));
-    }
-  }
-  ArrayList<BgStar> newStars = new ArrayList<BgStar>();
-  for (BgStar s : stars) {
-    s.stepAndDraw();
-    if (s.destroyed) {
-      newStars.add(new BgStar((int) Math.floor(Math.random()*width), (int) Math.floor(Math.random()*height), rand(starWmin, starWmax), rand(starHmin, starHmax), Globals.backgroundCycleLength, 0));
-    } else newStars.add(s);
-  }
-  stars = newStars;
-}
 
 class World extends GameObject implements LineCollider {
   LineSegment[] getLines() {
@@ -85,6 +63,29 @@ class World extends GameObject implements LineCollider {
     result[2] = new LineSegment(new PVector(width, 0), new PVector(width, height));
     result[3] = new LineSegment(new PVector(0, height), new PVector(width, height));
     return result;
+  }
+  
+  void draw() {
+    float starWmin = 5;
+    float starWmax = 12;
+    float starHmin = 5;
+    float starHmax = 12;
+    
+    float progressionPct = (state.frame%Globals.backgroundCycleLength)/(float)Globals.backgroundCycleLength;
+    if (stars == null) {
+      stars = new ArrayList<BgStar>();
+      for (int i = 0; i < 20; i++) {
+        stars.add(new BgStar((int) Math.floor(Math.random()*width), (int) Math.floor(Math.random()*height), rand(starWmin, starWmax), rand(starHmin, starHmax), Globals.backgroundCycleLength, (long)(Math.random()*Globals.backgroundCycleLength)));
+      }
+    }
+    ArrayList<BgStar> newStars = new ArrayList<BgStar>();
+    for (BgStar s : stars) {
+      s.stepAndDraw();
+      if (s.destroyed) {
+        newStars.add(new BgStar((int) Math.floor(Math.random()*width), (int) Math.floor(Math.random()*height), rand(starWmin, starWmax), rand(starHmin, starHmax), Globals.backgroundCycleLength, 0));
+      } else newStars.add(s);
+    }
+    stars = newStars;
   }
 }
 
@@ -131,7 +132,8 @@ class Wall extends GameObject implements BoxCollider {
 
 void button(float x, float y, float w, float h, String label, Game action) {
   textAlign(CENTER, CENTER);
-  fill(0,0,100);
+  if (!mouseInRegion(x,y,w,h)) fill(0,0,100);
+  else fill(0,0,44); 
   rect(x, y, w, h);
   fill(0,0,0);
   text(label, x, y, w, h);
@@ -176,6 +178,27 @@ class PlayerSpaceshipTexture implements EntityTexture {
     for (LineSegment l : textures) {
       line(l.origin.x, l.origin.y, l.destination.x, l.destination.y);
     }
+    
+    float acceleratingStatus = this.player.entity.velocity.mag() / 5;
+    strokeWeight(0);
+    if (acceleratingStatus != 0) {
+      float radius = 8;
+      if (acceleratingStatus >= 0.3) {
+        fill(55, 100, 100);
+        PVector pos = new PVector(0, 25).rotate(radians(this.player.entity.angle)).add(position);
+        circle(pos.x, pos.y, radius);
+      }
+      if (acceleratingStatus >= 0.6) {
+        fill(46, 100, 100);
+        PVector pos = new PVector(0, 40).rotate(radians(this.player.entity.angle)).add(position);
+        circle(pos.x, pos.y, radius);
+      }
+      if (acceleratingStatus >= 0.9) {
+        fill(0, 100, 100);
+        PVector pos = new PVector(0, 55).rotate(radians(this.player.entity.angle)).add(position);
+        circle(pos.x, pos.y, radius);
+      }
+    }
   }
 }
 
@@ -199,10 +222,80 @@ class PuckEntityTexture implements EntityTexture {
   }
 }
 
+class ColoredWallTexture implements EntityTexture {
+  color wallColor;
+  ColoredWallTexture(color c) {
+    this.wallColor = c;
+  }
+  void draw(PVector position, PVector dimensions) {
+    fill(this.wallColor);
+    noStroke();
+    rect(position.x, position.y, dimensions.x, dimensions.y);
+  }
+}
+
 class DefaultWallTexture implements EntityTexture {
   void draw(PVector position, PVector dimensions) {
     fill(color(0,0,100));
     noStroke();
     rect(position.x, position.y, dimensions.x, dimensions.y);
+  }
+}
+
+class Animation {
+  int frame;
+  SpriteMap2D map;
+  float animationSpeed;
+  
+  Animation(SpriteMap2D map, float animationSpeed) {
+    this.map = map;
+    this.animationSpeed = animationSpeed;
+  }
+  
+  void draw(int x, int y) {
+    int sprite = 0;
+
+    frame++;
+    double progress = frame/animationSpeed;
+    if (progress >= 1) {
+      frame = 0;
+      sprite = 0;
+    }
+    else sprite = (int) Math.floor((map.sprites.length)*progress);
+    map.draw(sprite, x, y);
+  }
+  
+  void reset() {
+    frame = 0;
+  }
+  
+  boolean finished() {
+    return (frame/animationSpeed) >= 0.98;
+  }
+}
+
+class SpriteMap2D {
+  PImage[] sprites;
+  String location;
+  float scale;
+  
+  SpriteMap2D(String spriteMapLocation, int pieceWidth, float scale) { 
+    location = spriteMapLocation;
+    this.scale = scale;
+    
+    PImage masterImage = loadImage(spriteMapLocation);
+    int numberOfHorizontalSprites = masterImage.width/pieceWidth;
+    
+    sprites = new PImage[numberOfHorizontalSprites];
+    for (int i = 0; i < numberOfHorizontalSprites; i++) {
+      PImage sprite = createImage(pieceWidth, masterImage.height, ARGB);
+      sprite.copy(masterImage, i*pieceWidth, 0, pieceWidth, masterImage.height, 0, 0, pieceWidth, masterImage.height);
+      sprites[i] = sprite; 
+    }
+  }
+  
+  
+  void draw(int n, int x, int y) {
+    image(this.sprites[n], x, y);
   }
 }

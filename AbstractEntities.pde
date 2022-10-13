@@ -8,10 +8,11 @@
 */
 abstract class GameObject {
   long wasSpawnedAtFrame;
+  long wasSpawnedAtTime;
   long wasDisabledAtFrame = -1;
   long lastOperationFrame = 0;
   
-  
+  long getLifetimeMilliseconds() { return System.currentTimeMillis() - this.wasSpawnedAtTime; }
   long getLifetime() { return state.frame - wasSpawnedAtFrame; }
   boolean isEnabled() { return wasDisabledAtFrame == -1; }
   
@@ -20,6 +21,7 @@ abstract class GameObject {
   void step() {}
   
   GameObject() {
+    this.wasSpawnedAtTime = System.currentTimeMillis();
     this.wasSpawnedAtFrame = state.frame;
   }
 }

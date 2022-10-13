@@ -1,6 +1,7 @@
 import java.util.Arrays;
 import java.util.Stack;
 
+// Globals contains configurable parameters for the game.
 static class Globals {
   static final float playerMaximumVelocity = 5;
   static final float playerWidth = 20;
@@ -8,15 +9,16 @@ static class Globals {
   static final int backgroundCycleLength = 400;
   
   // TURN OFF BEFORE SUBMITTING
-  static final boolean debugMode = true;
-  static ArrayList<Integer> colors;
-  static long getTotalGameTimeMillis(GameState st) {
-    return System.currentTimeMillis() - st.timeStart;
+  static final boolean debugMode = false;
+  static ArrayList<Integer> colors;  
+  static long getTotalGameTimeMillis() {
+    return System.currentTimeMillis() - state.timeStart;
   }
   static int clickX;
   static int clickY;
 }
 
+/** GameState exists as a singleton instance and stores the global state of the game. **/
 class GameState {
   Stage stage;
   Stack<Game> navigationTreeHistory = new Stack<Game>();
@@ -32,7 +34,7 @@ class GameState {
   PlayerState player2() { return allPlayers.get(1); }
 }
 
-GameState state;
+static GameState state;
 PFont spaceFont;
 
 void setup() {
@@ -51,16 +53,21 @@ void setup() {
     color(181,93,72)
   ));
   
+  // Initialise the player states with their control schemes
   state = new GameState();
   state.allPlayers.add(new PlayerState(new ControlScheme('A', 'D', 'W', 'S', ' '), Globals.colors.get((int) random(0, Globals.colors.size()))));
-  state.allPlayers.add(new PlayerState(new ControlScheme(LEFT, RIGHT, UP, DOWN, CONTROL), Globals.colors.get((int) random(0, Globals.colors.size()))));
+  state.allPlayers.add(new PlayerState(new ControlScheme(LEFT, RIGHT, UP, DOWN, SHIFT), Globals.colors.get((int) random(0, Globals.colors.size()))));
   
+  state.objects.add(new World());
   state.timeStart = System.currentTimeMillis();
   initGames();
   state.stage = Stage.Play;
   state.game = new MainMenu();
 }
 
+// Executed when changing games.
+// This function clears the active objects, loads the world, loads the player entities, and tells the engine
+// to switch to the 'play' state.
 void load() {
   state.objects = new ArrayList<GameObject>();
   state.objects.add(new World()); 
@@ -75,12 +82,14 @@ void load() {
 void draw() {
   clear();
   
+  // Advance the frame counter, and store the frame time
+  // for debugging purposes
   long frameStart = System.currentTimeMillis();
   state.frame++;
   
-  drawBackground();
-  
   switch (state.stage) {
+    // The Load state lasts for one frame and allows the engine to insert objects into the world before the player sees them.
+    // There is no loading screen, as this state exists for one frame only.
     case Load:
       load();
       break;
@@ -95,12 +104,11 @@ void draw() {
   }
 }
 
-void handleCollisionBetweenBoxColliders(BoxCollider first, BoxCollider second) {
-  LineSegment[] firstBox = ((BoxCollider) first).getCollidableSegments();
-  LineSegment[] secondBox = ((BoxCollider) second).getCollidableSegments();
-  
-  for (LineSegment firstLine : firstBox) {
-    for (LineSegment secondLine : secondBox) {
+// Determines whether two sets of lines are colliding.
+// This checks whether any line from the first array is colliding with any line from the second array.
+boolean areLineSegmentArraysColliding(LineSegment[] first, LineSegment[] second) {
+  for (LineSegment firstLine : first) {
+    for (LineSegment secondLine : second) {
       if (firstLine == null || secondLine == null) continue;
       LineSegmentCollisionResult result = firstLine.intercepting(secondLine);
       if (result.colliding) {
@@ -109,17 +117,43 @@ void handleCollisionBetweenBoxColliders(BoxCollider first, BoxCollider second) {
           stroke(66,91,47);
           point(result.pointOfCollision.x, result.pointOfCollision.y); 
         }
-        
-        Entity target = null;
-        if (first instanceof Entity) target = ((Entity) first);
-        else if (second instanceof Entity) target = ((Entity) second);
-        if (target == null) continue;
-        if (target.lastOperationFrame < state.frame) {
-          println("Pushing back on " + target);
-          PVector t = target.velocity;
-          target.velocity = new PVector(t.x*-0.7,t.y*-0.7);
-          target.lastOperationFrame = state.frame + 10;
-        }
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Determines whether two box colliders are colliding.
+// A box collider is a box-shape of lines, so this calls areLineSegmentArraysColliding.
+boolean areBoxCollidersColliding(BoxCollider first, BoxCollider second) {
+  LineSegment[] firstBox = ((BoxCollider) first).getCollidableSegments();
+  LineSegment[] secondBox = ((BoxCollider) second).getCollidableSegments();
+  
+  return areLineSegmentArraysColliding(firstBox, secondBox);
+}
+
+// Handles a possible collision between two box colliders.
+// Detects whether the colliders are actually colliding,
+// and attempts to push back on one of them.
+// Usually, this is a collision between a player and a wall,
+// so there is only one Entity (walls are not entities) to push back on.
+void handleCollisionBetweenBoxColliders(BoxCollider first, BoxCollider second) {
+  if (areBoxCollidersColliding(first, second)) {
+    Entity target = null;
+    if (first instanceof Entity) target = ((Entity) first);
+    else if (second instanceof Entity) target = ((Entity) second);
+    if (target == null) return;
+    if (target.lastOperationFrame < state.frame) {
+      println("Pushing back on " + target);
+      PVector t = target.velocity;
+      target.velocity = new PVector(t.x*-0.7,t.y*-0.7);
+      target.lastOperationFrame = state.frame + 10;
+      
+      if (first instanceof SelfColliderHandler) {
+        ((SelfColliderHandler)first).onCollide((GameObject) second); 
+      } if (second instanceof SelfColliderHandler) {
+        ((SelfColliderHandler)second).onCollide((GameObject) first); 
       }
     }
   }
@@ -130,21 +164,25 @@ void drawGame() {
   // Draw begins
   textSize(20);
   
+  // Handle the user requesting to quit the current game.
+  // Debounced so one tap doesn't go back all the way to the start.
+  // See the documentation in input for what debouncing means in this context.
   if (getInputDebounced(BACKSPACE) || getInputDebounced(DELETE)) {
     if (!state.navigationTreeHistory.empty()) { 
       switchGameNoSave(state.navigationTreeHistory.pop()); 
       return; 
     }
   }
-    // Draw stage
+  
+  // Draw every object in this frame.
   for (GameObject obj : state.objects) {
-    obj.draw();
+    if (obj.isEnabled()) obj.draw();
   }
   
   // Simulate physics for all objects loaded by the current game
   ArrayList<Entity> colliders = new ArrayList<Entity>();
   
-  // Collisions
+  // Enumerate every alive object, and test its collision against every other object.
   for (GameObject first : state.objects) {
     if (!first.isEnabled()) continue;
     
@@ -169,9 +207,27 @@ void drawGame() {
       if (first instanceof BoxCollider && second instanceof CircleCollider2D) {
         BoxCollider box = ((BoxCollider) first);
         CircleCollider2D circle = ((CircleCollider2D) second);
-        if (isPointInsideTriangle(circle.position, box.getCollidableSegments()[0].origin, box.getCollidableSegments()[1].origin, box.getCollidableSegments()[2].origin)) {
+        if (box.getCollidableSegments().length >= 3 && isPointInsideTriangle(circle.position, box.getCollidableSegments()[0].origin, box.getCollidableSegments()[1].origin, box.getCollidableSegments()[2].origin)) {
           println("Point collision between " + box + " and " + circle + " at " + System.currentTimeMillis());
           circle.onCollide((GameObject) box);
+        }
+      }
+      
+      // Collisions between box colliders (players, walls) and line colliders (the world)
+      if (first instanceof BoxCollider && second instanceof LineCollider) {
+        if ((first instanceof Wall && second instanceof World) || (first instanceof World && second instanceof Wall)) continue;
+        BoxCollider firstCollider = (BoxCollider) first;
+        LineCollider secondCollider = (LineCollider) second;
+        if (areLineSegmentArraysColliding(firstCollider.getCollidableSegments(), secondCollider.getLines())) {
+          Entity target = null;
+          if (first instanceof Entity) target = ((Entity) first);
+          else if (second instanceof Entity) target = ((Entity) second);
+          if (target == null) return;
+          if (target.lastOperationFrame < state.frame) {
+            PVector t = target.velocity;
+            target.velocity = new PVector(t.x*-0.7,t.y*-0.7);
+            target.lastOperationFrame = state.frame + 10;
+          }
         }
       }
       

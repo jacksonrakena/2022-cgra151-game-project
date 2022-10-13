@@ -12,6 +12,7 @@ class PlayerState {
   long lastFrameChanged = 0;
   int requiredChangeGap = 10;
   PlayerEntity entity;
+  int points;
   
   PlayerState(ControlScheme control, color c) {
     this.controlScheme = control;
@@ -143,6 +144,13 @@ void mouseReleased() {
 */
 boolean regionClicked(float x1, float y1, float w, float h) {
   return Globals.clickX > x1 && Globals.clickX < x1+w && Globals.clickY > y1 && Globals.clickY < y1+h;
+}
+
+/*
+  Returns true if the mouse is witin the region bounded by (x1, y1) to (x1+w, y1+h)
+*/
+boolean mouseInRegion(float x1, float y1, float w, float h) {
+  return mouseX > x1 && mouseX < x1+w && mouseY > y1 && mouseY < y1+h;
 }
 
 /*
